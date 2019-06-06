@@ -1,22 +1,19 @@
 package com.mindmotion.mm32blescanner;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -24,12 +21,10 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,6 +38,7 @@ import com.mindmotion.blelib.data.BleDevice;
 import com.mindmotion.blelib.exception.BleException;
 import com.mindmotion.mm32blescanner.adapter.DeviceAdapter;
 import com.mindmotion.mm32blescanner.comm.ObserverManager;
+import com.mindmotion.mm32blescanner.ui.SectionsPagerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,17 +50,7 @@ public class MainActivity extends AppCompatActivity
     private static final int REQUEST_CODE_OPEN_GPS = 1;
     private static final int REQUEST_CODE_PERMISSION_LOCATION = 2;
 
-    private BluetoothManager bluetoothManager;
-    private BluetoothAdapter bluetoothAdapter;
     private DeviceAdapter deviceAdapter;
-
-    private LinearLayout layout_setting;
-    private TextView txt_setting;
-    private Button btn_scan;
-    private EditText et_name, et_mac, et_uuid;
-    private Switch sw_auto;
-    private ImageView img_loading;
-
     private ProgressDialog progressDialog;
 
     @Override
@@ -183,8 +169,16 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        ListView listView_device = findViewById(R.id.list_devices);
-        listView_device.setAdapter(deviceAdapter);
+//        ListView listView_device = findViewById(R.id.list_devices);
+//        listView_device.setAdapter(deviceAdapter);
+
+        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(deviceAdapter,this, getSupportFragmentManager());
+
+        ViewPager viewPager = findViewById(R.id.view_pager);
+        viewPager.setAdapter(sectionsPagerAdapter);
+
+        TabLayout tabs = findViewById(R.id.tabs);
+        tabs.setupWithViewPager(viewPager);
     }
 
 
@@ -319,6 +313,7 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
+                deviceAdapter.setConnectedDeviceNum(deviceAdapter.getConnectedDeviceNum() + 1);
                 progressDialog.dismiss();
                 deviceAdapter.addDevice(bleDevice);
                 deviceAdapter.notifyDataSetChanged();
@@ -334,6 +329,7 @@ public class MainActivity extends AppCompatActivity
                 if (isActiveDisConnected) {
                     Toast.makeText(MainActivity.this, getString(R.string.action_disconnect), Toast.LENGTH_LONG).show();
                 } else {
+                    deviceAdapter.setConnectedDeviceNum(deviceAdapter.getConnectedDeviceNum() - 1);
                     Toast.makeText(MainActivity.this, getString(R.string.action_disconnected), Toast.LENGTH_LONG).show();
                     ObserverManager.getInstance().notifyObserver(bleDevice);
                 }

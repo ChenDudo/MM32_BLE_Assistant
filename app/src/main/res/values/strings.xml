@@ -6,7 +6,8 @@
     <string name="nav_header_subtitle">www.mindmotion.com.cn</string>
     <string name="nav_header_desc">Navigation header</string>
 
-
+    <string name="tab1_title">Devices List</string>
+    <string name="tab2_title">Device details</string>
 
     <string name="action_settings">Settings</string>
     <string name="action_scan">Scan</string>

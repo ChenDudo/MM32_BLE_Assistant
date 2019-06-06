@@ -1,6 +1,7 @@
 package com.mindmotion.mm32blescanner.adapter;
 
 import android.content.Context;
+import android.support.v4.app.Fragment;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -13,12 +14,17 @@ import com.mindmotion.blelib.BleManager;
 import com.mindmotion.blelib.data.BleDevice;
 import com.mindmotion.mm32blescanner.R;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeviceAdapter extends BaseAdapter {
+public class DeviceAdapter extends BaseAdapter implements Serializable {
+
     private Context context;
     private List<BleDevice> bleDeviceList;
+    private int addDevicePosition = 0;
+    private int connectedDeviceNum = 0;
+    private int scanedDeviceNum = 0;
 
     public DeviceAdapter(Context context) {
         this.context = context;
@@ -27,13 +33,24 @@ public class DeviceAdapter extends BaseAdapter {
 
     public void addDevice(BleDevice bleDevice) {
         removeDevice(bleDevice);
-        bleDeviceList.add(bleDevice);
+
+        scanedDeviceNum++;
+
+        if (connectedDeviceNum != 0 && connectedDeviceNum != scanedDeviceNum)
+            addDevicePosition = connectedDeviceNum - 1;
+        if (connectedDeviceNum != 0 && connectedDeviceNum == scanedDeviceNum)
+            addDevicePosition = connectedDeviceNum;
+        else
+            addDevicePosition = 0;
+
+        bleDeviceList.add(addDevicePosition, bleDevice);
     }
 
     public void removeDevice(BleDevice bleDevice) {
         for (int i = 0; i < bleDeviceList.size(); i++) {
             BleDevice device = bleDeviceList.get(i);
             if (bleDevice.getKey().equals(device.getKey())) {
+                scanedDeviceNum--;
                 bleDeviceList.remove(i);
             }
         }
@@ -101,8 +118,10 @@ public class DeviceAdapter extends BaseAdapter {
         final BleDevice bleDevice = getItem(position);
         if (bleDevice != null) {
             boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+            String mmBleMac = "ED:67:17";
             String name = bleDevice.getName();
             String mac = bleDevice.getMac();
+            boolean isMM32Mac = mac.substring(0,mmBleMac.length()).equals(mmBleMac);
             int rssi = bleDevice.getRssi();
             if (name == null)
                 name = "N/A";
@@ -110,13 +129,19 @@ public class DeviceAdapter extends BaseAdapter {
             holder.txt_mac.setText(mac);
             holder.txt_rssi.setText(String.valueOf(rssi));
             if (isConnected) {
-                holder.img_blue.setImageResource(R.mipmap.ic_launcher);
+                if (isMM32Mac)
+                    holder.img_blue.setImageResource(R.mipmap.ic_launcher_round);
+                else
+                    holder.img_blue.setImageResource(R.drawable.ic_baseline_bluetooth_connected_24px);
                 holder.txt_name.setTextColor(0xFFf19914);
                 holder.txt_mac.setTextColor(0xFFf19914);
                 holder.layout_idle.setVisibility(View.GONE);
                 holder.layout_connected.setVisibility(View.VISIBLE);
             } else {
-                holder.img_blue.setImageResource(R.mipmap.ic_launcher_round);
+                if (isMM32Mac)
+                    holder.img_blue.setImageResource(R.mipmap.ic_launcher);
+                else
+                    holder.img_blue.setImageResource(R.drawable.ic_baseline_bluetooth_searching_24px);
                 holder.txt_name.setTextColor(0xFF000000);
                 holder.txt_mac.setTextColor(0xFF000000);
                 holder.layout_idle.setVisibility(View.VISIBLE);
@@ -166,5 +191,13 @@ public class DeviceAdapter extends BaseAdapter {
 
     public void setOnDeviceClickListener(OnDeviceClickListener listener) {
         this.mListener = listener;
+    }
+
+    public void setConnectedDeviceNum(int connectedDeviceNum) {
+        this.connectedDeviceNum = connectedDeviceNum;
+    }
+
+    public int getConnectedDeviceNum() {
+        return connectedDeviceNum;
     }
 }
