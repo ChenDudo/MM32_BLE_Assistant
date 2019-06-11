@@ -1,6 +1,7 @@
 package com.mindmotion.mm32blescanner.adapter;
 
 import android.content.Context;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeviceAdapter extends BaseAdapter implements Serializable {
+public class DeviceAdapter extends BaseAdapter {
 
     private Context context;
     private List<BleDevice> bleDeviceList;
@@ -170,7 +171,7 @@ public class DeviceAdapter extends BaseAdapter implements Serializable {
         return convertView;
     }
 
-    class ViewHolder {
+    class ViewHolder implements Serializable{
         ImageView img_blue;
         TextView txt_name;
         TextView txt_mac;

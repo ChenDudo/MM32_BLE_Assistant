@@ -16,23 +16,17 @@ import com.mindmotion.mm32blescanner.adapter.DeviceAdapter;
 public class BleDeviceFragment extends Fragment {
     private static final String ARG_SECTION_NUMBER = "device_adapter";
 
-    DeviceAdapter mDeviceAdapter;
+    static DeviceAdapter mDeviceAdapter;
 
     public static BleDeviceFragment newInstance(DeviceAdapter deviceAdapter) {
         BleDeviceFragment bleDeviceFragment = new BleDeviceFragment();
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(ARG_SECTION_NUMBER, deviceAdapter);
-        bleDeviceFragment.setArguments(bundle);
+        mDeviceAdapter = deviceAdapter;
         return bleDeviceFragment;
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            mDeviceAdapter = (DeviceAdapter) getArguments().getSerializable(ARG_SECTION_NUMBER);
-        }
 
     }
 
