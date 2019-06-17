@@ -1,10 +1,10 @@
 package com.mindmotion.mm32blescanner;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothManager;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -21,12 +21,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mindmotion.blelib.BleManager;
@@ -52,6 +46,9 @@ public class MainActivity extends AppCompatActivity
 
     private DeviceAdapter deviceAdapter;
     private ProgressDialog progressDialog;
+    private SectionsPagerAdapter sectionsPagerAdapter;
+    private ViewPager viewPager;
+    private TabLayout tabs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +133,7 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressLint("ResourceAsColor")
     private void initViewer(){
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -173,12 +171,12 @@ public class MainActivity extends AppCompatActivity
 //        ListView listView_device = findViewById(R.id.list_devices);
 //        listView_device.setAdapter(deviceAdapter);
 
-        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(deviceAdapter,this, getSupportFragmentManager());
+        sectionsPagerAdapter = new SectionsPagerAdapter(deviceAdapter,this, getSupportFragmentManager());
 
-        ViewPager viewPager = findViewById(R.id.view_pager);
+        viewPager = findViewById(R.id.view_pager);
         viewPager.setAdapter(sectionsPagerAdapter);
 
-        TabLayout tabs = findViewById(R.id.tabs);
+        tabs = findViewById(R.id.tabs);
         tabs.setupWithViewPager(viewPager);
     }
 
@@ -318,6 +316,9 @@ public class MainActivity extends AppCompatActivity
                 progressDialog.dismiss();
                 deviceAdapter.addDevice(bleDevice);
                 deviceAdapter.notifyDataSetChanged();
+                sectionsPagerAdapter.addBleDevice(bleDevice.getName(), bleDevice);
+                sectionsPagerAdapter.appendTabTitle(bleDevice.getName());
+                viewPager.setAdapter(sectionsPagerAdapter);
             }
 
             @Override
@@ -325,6 +326,13 @@ public class MainActivity extends AppCompatActivity
                 progressDialog.dismiss();
 
                 deviceAdapter.removeDevice(bleDevice);
+
+                List<String> pageList = sectionsPagerAdapter.getTab_title();
+                int pageIdx = pageList.indexOf(bleDevice.getName());
+                sectionsPagerAdapter.destroyItem(viewPager, pageIdx, sectionsPagerAdapter.getItem(pageIdx));
+                sectionsPagerAdapter.deleteTabTitle(bleDevice.getName());
+//                viewPager.setAdapter(sectionsPagerAdapter);
+                sectionsPagerAdapter.notifyDataSetChanged();
                 deviceAdapter.notifyDataSetChanged();
 
                 if (isActiveDisConnected) {
@@ -333,6 +341,7 @@ public class MainActivity extends AppCompatActivity
                     deviceAdapter.setConnectedDeviceNum(deviceAdapter.getConnectedDeviceNum() - 1);
                     Toast.makeText(MainActivity.this, getString(R.string.action_disconnected), Toast.LENGTH_LONG).show();
                     ObserverManager.getInstance().notifyObserver(bleDevice);
+
                 }
             }
         });

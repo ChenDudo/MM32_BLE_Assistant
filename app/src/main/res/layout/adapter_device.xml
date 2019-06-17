@@ -52,7 +52,7 @@
                 android:id="@+id/device_rssi_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="RSSI:"
+                android:text="@string/device_rssi"
                 android:textSize="14sp"/>
 
             <TextView
