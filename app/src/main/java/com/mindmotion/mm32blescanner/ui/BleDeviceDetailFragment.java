@@ -91,6 +91,7 @@ public class BleDeviceDetailFragment extends Fragment {
         private Map<String,List<BluetoothGattCharacteristic>> charMap;
 
         ResultAdapter(Context context) {
+            Log.d("bleDevice", "添加适配器： ResultAdapter");
             this.context = context;
             bluetoothGattServices = new ArrayList<>();
             bluetoothGattCharacteristics = new ArrayList<>();
@@ -98,10 +99,12 @@ public class BleDeviceDetailFragment extends Fragment {
         }
 
         void addServiceResult(BluetoothGattService service) {
+            Log.d("bleDevice", "添加服务： " + service);
             bluetoothGattServices.add(service);
         }
 
         void addCharResult(String name, List<BluetoothGattCharacteristic> charList) {
+            Log.d("bleDevice", "添加特征值： " + name);
             charMap.put(name, charList);
         }
 
@@ -112,16 +115,19 @@ public class BleDeviceDetailFragment extends Fragment {
 
         @Override
         public int getGroupCount() {
+            Log.d("bleDevice", "获取组计数： " + bluetoothGattServices.size());
             return bluetoothGattServices.size();
         }
 
         @Override
         public int getChildrenCount(int groupPosition) {
-            return bluetoothGattCharacteristics.size();
+            Log.d("bleDevice", "获取子组计数： " + bluetoothGattServices.get(groupPosition).getCharacteristics().size());
+            return bluetoothGattServices.get(groupPosition).getCharacteristics().size();
         }
 
         @Override
         public BluetoothGattService getGroup(int groupPosition) {
+            Log.d("bleDevice", "获取组： " + groupPosition);
             if (groupPosition > bluetoothGattServices.size())
                 return null;
             return bluetoothGattServices.get(groupPosition);
@@ -134,7 +140,10 @@ public class BleDeviceDetailFragment extends Fragment {
 
         @Override
         public Object getChild(int groupPosition, int childPosition) {
-            return null;
+            if (groupPosition > bluetoothGattServices.size())
+                return null;
+
+            return bluetoothGattServices.get(groupPosition).getCharacteristics().get(childPosition);
         }
 
         @Override
@@ -188,7 +197,7 @@ public class BleDeviceDetailFragment extends Fragment {
                 viewChildHolder.char_value= convertView.findViewById(R.id.detail_char_value);
             }
 
-            BluetoothGattCharacteristic characteristic = bluetoothGattServices.get(groupPosition).getCharacteristics().get(childPosition);;
+            BluetoothGattCharacteristic characteristic = bluetoothGattServices.get(groupPosition).getCharacteristics().get(childPosition);
 
             String uuid = characteristic.getUuid().toString();
             String charName = AllGattCharacteristics.lookup(uuid);

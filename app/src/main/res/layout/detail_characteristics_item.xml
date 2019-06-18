@@ -11,9 +11,10 @@
         android:id="@+id/detail_char_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:layout_marginStart="32dp"
+        android:text="aaaaaaaaaaaaa"
+        android:textSize="14sp"
         android:textStyle="bold"
-        android:text=""
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -21,8 +22,9 @@
         android:id="@+id/detail_char_uuid_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
         android:text="@string/detail_uuid"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/detail_char_name" />
 
@@ -31,8 +33,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text=""
-        android:textSize="14sp"
+        android:text="aaaaaaaa"
+        android:textSize="12sp"
         app:layout_constraintLeft_toRightOf="@id/detail_char_uuid_text"
         app:layout_constraintStart_toEndOf="@+id/detail_char_uuid_text"
         app:layout_constraintTop_toBottomOf="@+id/detail_char_name" />
@@ -41,8 +43,9 @@
         android:id="@+id/detail_char_properties_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
         android:text="@string/detail_properties"
-        android:textSize="14sp"
+        android:textSize="12sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/detail_char_uuid_text" />
 
@@ -59,7 +62,9 @@
         android:id="@+id/detail_char_value_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
         android:text="@string/detail_value"
+        android:textSize="12sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/detail_char_properties_text" />
 
