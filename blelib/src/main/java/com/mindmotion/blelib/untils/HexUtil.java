@@ -1,5 +1,7 @@
 package com.mindmotion.blelib.untils;
 
+import android.util.Log;
+
 public class HexUtil {
 
     private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5',
@@ -60,6 +62,21 @@ public class HexUtil {
         return sb.toString().trim();
     }
 
+    public static String formatASCIIString(byte[] data) {
+        if (data == null || data.length < 1)
+            return null;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            if (data[i] > 31 && data[i] < 127)
+                sb.append((char)(data[i] & 0xFF));
+            else {
+                sb.append("(0x)");
+                sb.append(Integer.toHexString(data[i] & 0xFF));
+            }
+        }
+        return sb.toString().trim();
+    }
+
     public static byte[] decodeHex(char[] data) {
 
         int len = data.length;
@@ -96,14 +113,16 @@ public class HexUtil {
         if (hexString == null || hexString.equals("")) {
             return null;
         }
+
         hexString = hexString.trim();
-        hexString = hexString.toUpperCase();
         int length = hexString.length() / 2;
+
         char[] hexChars = hexString.toCharArray();
-        byte[] d = new byte[length];
-        for (int i = 0; i < length; i++) {
-            int pos = i * 2;
-            d[i] = (byte) (charToByte(hexChars[pos]) << 4 | charToByte(hexChars[pos + 1]));
+        Log.d("bleDevice", hexChars.toString());
+
+        byte[] d = new byte[hexChars.length];
+        for (int i = 0; i < hexChars.length; i++) {
+            d[i] = (byte) hexChars[i];
         }
         return d;
     }

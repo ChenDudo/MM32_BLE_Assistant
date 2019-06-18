@@ -1,28 +1,39 @@
 package com.mindmotion.mm32blescanner.ui;
 
+import android.app.AlertDialog;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mindmotion.blelib.BleManager;
+import com.mindmotion.blelib.callback.BleNotifyCallback;
+import com.mindmotion.blelib.callback.BleReadCallback;
+import com.mindmotion.blelib.callback.BleWriteCallback;
 import com.mindmotion.blelib.data.AllGattCharacteristics;
 import com.mindmotion.blelib.data.AllGattServices;
+import com.mindmotion.blelib.data.AllGattUuid;
 import com.mindmotion.blelib.data.BleDevice;
+import com.mindmotion.blelib.exception.BleException;
+import com.mindmotion.blelib.untils.HexUtil;
 import com.mindmotion.mm32blescanner.R;
 
 import java.util.ArrayList;
@@ -33,13 +44,15 @@ import java.util.Map;
 public class BleDeviceDetailFragment extends Fragment {
     private static Map<String, BleDevice> mBleDeviceMap;
     private static String mName;
-
+    private static Boolean mNotifyFlag;
+    private static String mWriteText;
     private BleDeviceDetailViewModel bleDeviceDetailViewModel;
 
     public static BleDeviceDetailFragment newInstance(Map<String, BleDevice> bleDeviceMap, String name) {
         BleDeviceDetailFragment bleDeviceDetailFragment = new BleDeviceDetailFragment();
         mBleDeviceMap = bleDeviceMap;
         mName = name;
+        mNotifyFlag = false;
         return bleDeviceDetailFragment;
     }
 
@@ -59,25 +72,141 @@ public class BleDeviceDetailFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.content_details, container, false);
+        final View root = inflater.inflate(R.layout.content_details, container, false);
 
         List<String> servicesList = new ArrayList<>();
-        List<String> charList = new ArrayList<>();
-        BluetoothGatt gatt = BleManager.getInstance().getBluetoothGatt(mBleDeviceMap.get(mName));
+        final List<String> charList = new ArrayList<>();
+        final BluetoothGatt gatt = BleManager.getInstance().getBluetoothGatt(mBleDeviceMap.get(mName));
 
         final ExpandableListView expandableListView = root.findViewById(R.id.list_details);
         expandableListView.setGroupIndicator(null);
-
-        ResultAdapter resultAdapter = new ResultAdapter(getActivity());
+        final ResultAdapter resultAdapter = new ResultAdapter(getActivity());
         expandableListView.setAdapter(resultAdapter);
+        expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, final int groupPosition, final int childPosition, long id) {
+                List<BluetoothGattService> list = resultAdapter.getBluetoothGattServices();
+                final BluetoothGattCharacteristic characteristic= list.get(groupPosition).getCharacteristics().get(childPosition);
+                int charaProp = list.get(groupPosition).getCharacteristics().get(childPosition).getProperties();
+
+                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    BleManager.getInstance().read(
+                            mBleDeviceMap.get(mName),
+                            characteristic.getService().getUuid().toString(),
+                            characteristic.getUuid().toString(),
+                            new BleReadCallback() {
+                                @Override
+                                public void onReadSuccess(final byte[] data) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            resultAdapter.SetChildViewData(groupPosition, childPosition, HexUtil.formatASCIIString(data));
+                                            resultAdapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onReadFailure(final BleException exception) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            resultAdapter.SetChildViewData(groupPosition, childPosition, exception.toString());
+                                            resultAdapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                }
+                            }
+                    );
+                }
+
+                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0 ||
+                        (charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
+                    final EditText editText = new EditText(getContext());
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle("Write").setIcon(R.drawable.ic_baseline_vertical_align_top_24px);
+                    builder.setView(editText);
+                    builder.setNegativeButton("Cancel", null);
+                    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            mWriteText = editText.getText().toString();
+                            Log.d("bleDevice", "获取写数据： " + mWriteText);
+                            if (!TextUtils.isEmpty(mWriteText)) {
+
+                                BleManager.getInstance().write(
+                                        mBleDeviceMap.get(mName),
+                                        characteristic.getService().getUuid().toString(),
+                                        characteristic.getUuid().toString(),
+                                        HexUtil.hexStringToBytes(mWriteText),
+                                        new BleWriteCallback() {
+                                            @Override
+                                            public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                                                mWriteText = null;
+                                                resultAdapter.SetChildViewData(groupPosition, childPosition, HexUtil.formatASCIIString(justWrite));
+                                                resultAdapter.notifyDataSetChanged();
+                                            }
+
+                                            @Override
+                                            public void onWriteFailure(BleException exception) {
+                                                resultAdapter.SetChildViewData(groupPosition, childPosition, exception.toString());
+                                                resultAdapter.notifyDataSetChanged();
+                                            }
+                                        }
+                                );
+                            }
+                        }
+                    });
+                    builder.show();
+                }
+
+                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    if (!mNotifyFlag) {
+                        mNotifyFlag = true;
+                        BleManager.getInstance().notify(
+                                mBleDeviceMap.get(mName),
+                                characteristic.getService().getUuid().toString(),
+                                characteristic.getUuid().toString(),
+                                new BleNotifyCallback() {
+                                    @Override
+                                    public void onNotifySuccess() {
+                                        Toast.makeText(getContext(), "NOTIFY ON", Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    @Override
+                                    public void onNotifyFailure(BleException exception) {
+                                        resultAdapter.SetChildViewData(groupPosition, childPosition, exception.toString());
+                                        resultAdapter.notifyDataSetChanged();
+                                    }
+
+                                    @Override
+                                    public void onCharacteristicChanged(byte[] data) {
+                                        resultAdapter.SetChildViewData(groupPosition, childPosition, HexUtil.formatASCIIString(characteristic.getValue()));
+                                        resultAdapter.notifyDataSetChanged();
+                                    }
+                                }
+                        );
+                    } else {
+                        mNotifyFlag = false;
+                        BleManager.getInstance().stopNotify(
+                                mBleDeviceMap.get(mName),
+                                characteristic.getService().getUuid().toString(),
+                                characteristic.getUuid().toString());
+                        Toast.makeText(getContext(), "NOTIFY OFF", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
+                    Toast.makeText(getContext(), "IND",Toast.LENGTH_SHORT).show();
+                }
+
+                return true;
+            }
+        });
 
         for (BluetoothGattService service: gatt.getServices()) {
             resultAdapter.addServiceResult(service);
         }
-//
-//        for (BluetoothGattService service: gatt.getServices()) {
-//            resultAdapter.addServiceResult(service);
-//        }
 
         resultAdapter.notifyDataSetChanged();
 
@@ -88,14 +217,25 @@ public class BleDeviceDetailFragment extends Fragment {
         private Context context;
         private List<BluetoothGattService> bluetoothGattServices;
         private List<BluetoothGattCharacteristic> bluetoothGattCharacteristics;
-        private Map<String,List<BluetoothGattCharacteristic>> charMap;
+        private HashMap<String, String> map = new HashMap<>();
 
         ResultAdapter(Context context) {
             Log.d("bleDevice", "添加适配器： ResultAdapter");
             this.context = context;
             bluetoothGattServices = new ArrayList<>();
             bluetoothGattCharacteristics = new ArrayList<>();
-            charMap = new HashMap<>();
+        }
+
+        public void SetChildViewData(int groupPosition, int childPosition, String value){
+            map.put(groupPosition + "" + childPosition, value);
+        }
+
+        public List<BluetoothGattService> getBluetoothGattServices() {
+            return bluetoothGattServices;
+        }
+
+        public List<BluetoothGattCharacteristic> getBluetoothGattCharacteristics() {
+            return bluetoothGattCharacteristics;
         }
 
         void addServiceResult(BluetoothGattService service) {
@@ -105,7 +245,6 @@ public class BleDeviceDetailFragment extends Fragment {
 
         void addCharResult(String name, List<BluetoothGattCharacteristic> charList) {
             Log.d("bleDevice", "添加特征值： " + name);
-            charMap.put(name, charList);
         }
 
         void clearService() {
@@ -173,10 +312,11 @@ public class BleDeviceDetailFragment extends Fragment {
 
             BluetoothGattService service = bluetoothGattServices.get(groupPosition);
             String uuid = service.getUuid().toString();
-
             String serviceName = AllGattServices.lookup(uuid);
+
+
             viewHolder.service_name.setText(serviceName);
-            viewHolder.service_uuid.setText(uuid);
+            viewHolder.service_uuid.setText(AllGattUuid.lookup(uuid));
 
             return convertView;
         }
@@ -231,15 +371,15 @@ public class BleDeviceDetailFragment extends Fragment {
             }
 
             viewChildHolder.char_name.setText(charName);
-            viewChildHolder.char_uuid.setText(uuid);
-//            viewChildHolder.char_value.setText(value);
+            viewChildHolder.char_uuid.setText(AllGattUuid.lookup(uuid));
+            viewChildHolder.char_value.setText(map.get(groupPosition+""+childPosition));
 
             return convertView;
         }
 
         @Override
         public boolean isChildSelectable(int groupPosition, int childPosition) {
-            return false;
+            return true;
         }
 
         class ViewHolder {
@@ -253,6 +393,20 @@ public class BleDeviceDetailFragment extends Fragment {
             TextView char_uuid;
             TextView char_prop;
             TextView char_value;
+        }
+    }
+
+    private void runOnUiThread(Runnable runnable) {
+        if (isAdded() && getActivity() != null)
+            getActivity().runOnUiThread(runnable);
+    }
+
+    private void addText(TextView textView, String content) {
+        textView.append(content);
+        textView.append("\n");
+        int offset = textView.getLineCount() * textView.getLineHeight();
+        if (offset > textView.getHeight()) {
+            textView.scrollTo(0, offset - textView.getHeight());
         }
     }
 }

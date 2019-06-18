@@ -54,7 +54,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text=""
+        android:text="aaaaa"
+        android:textSize="12sp"
         app:layout_constraintStart_toEndOf="@+id/detail_char_properties_text"
         app:layout_constraintTop_toBottomOf="@+id/detail_char_uuid" />
 
@@ -74,6 +75,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text=""
+        android:textSize="12sp"
         app:layout_constraintStart_toEndOf="@+id/detail_char_value_text"
         app:layout_constraintTop_toBottomOf="@+id/detail_char_properties" />
 
