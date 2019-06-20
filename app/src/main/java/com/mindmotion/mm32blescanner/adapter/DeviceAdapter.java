@@ -35,14 +35,14 @@ public class DeviceAdapter extends BaseAdapter {
     public void addDevice(BleDevice bleDevice) {
         removeDevice(bleDevice);
 
-        scanedDeviceNum++;
-
-        if (connectedDeviceNum != 0 && connectedDeviceNum != scanedDeviceNum)
-            addDevicePosition = connectedDeviceNum - 1;
-        if (connectedDeviceNum != 0 && connectedDeviceNum == scanedDeviceNum)
-            addDevicePosition = connectedDeviceNum;
-        else
-            addDevicePosition = 0;
+//        scanedDeviceNum++;
+//
+//        if (connectedDeviceNum != 0 && connectedDeviceNum != scanedDeviceNum)
+//            addDevicePosition = connectedDeviceNum - 1;
+//        if (connectedDeviceNum != 0 && connectedDeviceNum == scanedDeviceNum)
+//            addDevicePosition = connectedDeviceNum;
+//        else
+//            addDevicePosition = 0;
 
         bleDeviceList.add(addDevicePosition, bleDevice);
     }
