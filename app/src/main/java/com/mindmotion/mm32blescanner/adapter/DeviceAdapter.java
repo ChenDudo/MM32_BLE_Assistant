@@ -35,14 +35,14 @@ public class DeviceAdapter extends BaseAdapter {
     public void addDevice(BleDevice bleDevice) {
         removeDevice(bleDevice);
 
-        scanedDeviceNum++;
-
-        if (connectedDeviceNum != 0 && connectedDeviceNum != scanedDeviceNum)
-            addDevicePosition = connectedDeviceNum - 1;
-        if (connectedDeviceNum != 0 && connectedDeviceNum == scanedDeviceNum)
-            addDevicePosition = connectedDeviceNum;
-        else
-            addDevicePosition = 0;
+//        scanedDeviceNum++;
+//
+//        if (connectedDeviceNum != 0 && connectedDeviceNum != scanedDeviceNum)
+//            addDevicePosition = connectedDeviceNum - 1;
+//        if (connectedDeviceNum != 0 && connectedDeviceNum == scanedDeviceNum)
+//            addDevicePosition = connectedDeviceNum;
+//        else
+//            addDevicePosition = 0;
 
         bleDeviceList.add(addDevicePosition, bleDevice);
     }
@@ -134,8 +134,8 @@ public class DeviceAdapter extends BaseAdapter {
                     holder.img_blue.setImageResource(R.mipmap.ic_launcher_round);
                 else
                     holder.img_blue.setImageResource(R.drawable.ic_baseline_bluetooth_connected_24px);
-                holder.txt_name.setTextColor(0xFFf19914);
-                holder.txt_mac.setTextColor(0xFFf19914);
+                holder.txt_name.setTextColor(0xFF0099ff);
+                holder.txt_mac.setTextColor(0xFFff8000);
                 holder.layout_idle.setVisibility(View.GONE);
                 holder.layout_connected.setVisibility(View.VISIBLE);
             } else {

@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -136,7 +137,9 @@ public class MainActivity extends AppCompatActivity
     @SuppressLint("ResourceAsColor")
     private void initViewer(){
         Toolbar toolbar = findViewById(R.id.toolbar);
+
         setSupportActionBar(toolbar);
+        toolbar.setTitleTextAppearance(this, R.style.Toolbar_TitleText);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
@@ -237,8 +240,13 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onScanning(BleDevice bleDevice) {
-                deviceAdapter.addDevice(bleDevice);
-                deviceAdapter.notifyDataSetChanged();
+                if(bleDevice.getName()==null) {
+                    return;
+                }
+                else{
+                    deviceAdapter.addDevice(bleDevice);
+                    deviceAdapter.notifyDataSetChanged();
+                }
             }
         });
     }
@@ -246,7 +254,9 @@ public class MainActivity extends AppCompatActivity
     private void checkPermissions() {
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!bluetoothAdapter.isEnabled()) {
-            Toast.makeText(this, getString(R.string.please_open_blue), Toast.LENGTH_LONG).show();
+            //Toast.makeText(this, getString(R.string.please_open_blue), Toast.LENGTH_LONG).show();
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, 2);
             return;
         }
 
@@ -319,6 +329,16 @@ public class MainActivity extends AppCompatActivity
                 sectionsPagerAdapter.addBleDevice(bleDevice.getName(), bleDevice);
                 sectionsPagerAdapter.appendTabTitle(bleDevice.getName());
                 viewPager.setAdapter(sectionsPagerAdapter);
+
+                //　TODO: open LED setting
+                String ledName = "MMNJ LogoWall";
+
+                if (bleDevice.getName().equals(ledName)) {
+
+                    Intent intent = new Intent(MainActivity.this, MMNJ_LED.class);
+                    intent.putExtra(MMNJ_LED.KEY_DATA, bleDevice);
+                    startActivity(intent);
+                }
             }
 
             @Override
