@@ -160,6 +160,7 @@ public class MainActivity extends AppCompatActivity
                 if (!BleManager.getInstance().isConnected(bleDevice)) {
                     BleManager.getInstance().cancelScan();
                     connect(bleDevice);
+
                 }
             }
 
