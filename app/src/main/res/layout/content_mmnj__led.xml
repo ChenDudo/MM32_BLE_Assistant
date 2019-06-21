@@ -12,47 +12,42 @@
         android:id="@+id/bt_ledon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="162dp"
-        android:layout_marginTop="123dp"
-        android:layout_marginEnd="162dp"
-        android:background="@color/primaryLightColor"
+        android:layout_marginEnd="32dp"
+        android:radius="80dp"
+        android:background="@drawable/button_selectors"
         android:text="ON"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/bt_send" />
 
     <Button
         android:id="@+id/bt_ledoff"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="162dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="161dp"
-        android:background="@color/primaryLightColor"
+        android:layout_marginStart="32dp"
+        android:radius="80dp"
+        android:background="@drawable/button_selectors"
         android:text="OFF"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/bt_ledon" />
+        app:layout_constraintTop_toTopOf="@+id/bt_send" />
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="176dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="176dp"
-        android:text="set PWM value(0 - 1000)"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/bt_ledoff" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <SeekBar
         android:id="@+id/pwmset"
-        android:layout_width="251dp"
-        android:layout_height="75dp"
-        android:layout_marginStart="184dp"
+        android:layout_width="259dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="186dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
@@ -62,10 +57,88 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="162dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="162dp"
-        android:text="send"
-        android:background="@drawable/button_selectors"
+        android:background="@drawable/button_red_style"
+        android:text="SET"
+        android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pwmset" />
+
+    <TextView
+        android:id="@+id/curTep_textview1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="29dp"
+        android:layout_marginEnd="280dp"
+        android:text="当前环境温度："
+        android:textColor="@color/primaryLightColor"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bt_ledoff" />
+
+    <TextView
+        android:id="@+id/curTep_textview2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="280dp"
+        android:text="蓝牙环境温度："
+        android:textColor="@color/primaryLightColor"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/curTep_textview" />
+
+    <TextView
+        android:id="@+id/curTep_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="280dp"
+        android:text="电源环境温度："
+        android:textColor="@color/primaryLightColor"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/curTep_textview1" />
+
+    <TextView
+        android:id="@+id/curTep_text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="264dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/curTep_textview1"
+        app:layout_constraintTop_toBottomOf="@+id/bt_ledoff" />
+
+    <TextView
+        android:id="@+id/curTep_text2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="264dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/curTep_textview1"
+        app:layout_constraintTop_toBottomOf="@+id/curTep_text3" />
+
+    <TextView
+        android:id="@+id/curTep_text3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="264dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/curTep_textview1"
+        app:layout_constraintTop_toBottomOf="@+id/curTep_text1" />
+
 </android.support.constraint.ConstraintLayout>

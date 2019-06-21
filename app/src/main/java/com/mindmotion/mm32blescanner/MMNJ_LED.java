@@ -2,6 +2,7 @@ package com.mindmotion.mm32blescanner;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -19,27 +20,31 @@ import com.mindmotion.blelib.data.BleDevice;
 import com.mindmotion.blelib.BleManager;
 
 import com.mindmotion.blelib.exception.BleException;
-import com.mindmotion.mm32blescanner.comm.Observable;
-import com.mindmotion.mm32blescanner.comm.ObserverManager;
 
 public class MMNJ_LED extends AppCompatActivity{
-    private static final String TAG = MMNJ_LED.class.getSimpleName();
-    public static final String KEY_DATA = "key_data";
 
+    public static final String KEY_DATA = "key_data";
+    private static final String TAG = MMNJ_LED.class.getSimpleName();
+    private boolean LEDStatus = false;
     private BleDevice bleDevice;
-    private BluetoothGattService bluetoothGattService;
-    private BluetoothGattCharacteristic characteristic;
-    private int charaProp;
-    private int pwmSendata;
+    private int pwmDutyData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
         setContentView(R.layout.activity_mmnj__led);
 
         initData();
         initView();
+
+        boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+        if(isConnected)
+            Log.i(TAG, "connect ok");
+        else {
+            Log.i(TAG, "connect ERROR");
+            Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+            startActivity(intent);
+        }
 
     }
 
@@ -47,7 +52,6 @@ public class MMNJ_LED extends AppCompatActivity{
     protected void onDestroy() {
         super.onDestroy();
         BleManager.getInstance().clearCharacterCallback(bleDevice);
-
     }
 
     public static byte hexToByte(String inHex){
@@ -58,20 +62,92 @@ public class MMNJ_LED extends AppCompatActivity{
         int hexlen = inHex.length();
         byte[] result;
         if (hexlen % 2 == 1){
-            //奇数
-            hexlen++;
-            result = new byte[(hexlen/2)];
-            inHex="0"+inHex;
+            hexlen ++;
+            result = new byte[(hexlen / 2)];
+            inHex = "0" + inHex;
         }else {
-            //偶数
-            result = new byte[(hexlen/2)];
+            result = new byte[(hexlen / 2)];
         }
-        int j=0;
-        for (int i = 0; i < hexlen; i+=2){
-            result[j]=hexToByte(inHex.substring(i,i+2));
-            j++;
+        int j = 0;
+        for (int i = 0; i < hexlen; i += 2){
+            result[j] = hexToByte(inHex.substring(i, i + 2));
+            j ++;
         }
         return result;
+    }
+
+    private void sendOFFcmd(){
+        BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000002-fc0a-4c04-9df8-245fc68a5036",
+                hexToByteArray("0102"),
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Toast.makeText(MMNJ_LED.this, "关闭 已发送！", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Toast.makeText(MMNJ_LED.this, "关闭 发送失败！", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+        LEDStatus = false;
+    }
+
+    private void sendONcmd(){
+        BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000002-fc0a-4c04-9df8-245fc68a5036",
+                hexToByteArray("0101"),
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Toast.makeText(MMNJ_LED.this, "打开 已发送！", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Toast.makeText(MMNJ_LED.this, "打开 发送失败！", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+        LEDStatus = true;
+    }
+
+    private void sendPWMData(int i){
+        String sData = "0102";
+
+        Log.d("send data", "i: " + i);
+        if(i <= 0){
+            sendOFFcmd();
+        }
+        else {
+            if (LEDStatus == false)
+                sendONcmd();
+            if (i <= 0xf) {
+                sData = "020" + Integer.toHexString(i);
+            } else if (i <= 0xff) {
+                sData = "02" + Integer.toHexString(i);
+            }
+            Log.d("send data", "string: " + sData);
+            Log.d("send data", "byte: " + hexToByteArray(sData));
+
+            BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                    "00000002-fc0a-4c04-9df8-245fc68a5036",
+                    hexToByteArray(sData),
+                    new BleWriteCallback() {
+                        @Override
+                        public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                            Toast.makeText(MMNJ_LED.this, pwmDutyData + "% 发送", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onWriteFailure(BleException exception) {
+                            Toast.makeText(MMNJ_LED.this, pwmDutyData + "% 未发送", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            );
+        }
     }
 
     private void initView() {
@@ -85,22 +161,11 @@ public class MMNJ_LED extends AppCompatActivity{
                 boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
                 if(isConnected){
                     Log.i(TAG, "connect ok");
-                    BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
-                            "00000002-fc0a-4c04-9df8-245fc68a5036",
-                            hexToByteArray("0101"),
-                            new BleWriteCallback() {
-                                @Override
-                                public void onWriteSuccess(int current, int total, byte[] justWrite) {
-                                    Toast.makeText(MMNJ_LED.this, "打开 指令发送成功！", Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onWriteFailure(BleException exception) {
-                                    Toast.makeText(MMNJ_LED.this, "打开 指令发送失败！", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                    );
-
+                    sendONcmd();
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
                 }
             }
         });
@@ -112,22 +177,11 @@ public class MMNJ_LED extends AppCompatActivity{
                 boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
                 if(isConnected){
                     Log.i(TAG, "connect ok");
-                    BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
-                            "00000002-fc0a-4c04-9df8-245fc68a5036",
-                            hexToByteArray("0102"),
-                            new BleWriteCallback() {
-                                @Override
-                                public void onWriteSuccess(int current, int total, byte[] justWrite) {
-                                    Toast.makeText(MMNJ_LED.this, "关闭 指令发送成功！", Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onWriteFailure(BleException exception) {
-                                    Toast.makeText(MMNJ_LED.this, "关闭 指令发送失败！", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                    );
-
+                    sendOFFcmd();
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
                 }
             }
         });
@@ -137,9 +191,9 @@ public class MMNJ_LED extends AppCompatActivity{
         pwm.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                Log.d("Seekbar", "i: " + i);
+//                Log.d("Seekbar", "i: " + i);
                 pwmValue.setText("PWM DutyCycle: "+ String.valueOf(i) + "%");
-                pwmSendata = i * 10;
+                pwmDutyData = i;
             }
 
             @Override
@@ -159,23 +213,11 @@ public class MMNJ_LED extends AppCompatActivity{
             public void onClick(View view) {
                 boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
                 if(isConnected){
-                    Log.d("Ledsend", "ledsend: " + pwmCmdCir(pwmSendata));
-                    BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
-                            "00000002-fc0a-4c04-9df8-245fc68a5036",
-                            hexToByteArray(pwmCmdCir(pwmSendata)),
-                            new BleWriteCallback() {
-                                @Override
-                                public void onWriteSuccess(int current, int total, byte[] justWrite) {
-                                    Toast.makeText(MMNJ_LED.this, pwmSendata + " 发送成功", Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onWriteFailure(BleException exception) {
-                                    Toast.makeText(MMNJ_LED.this, pwmSendata + " 发送失败", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                    );
-
+                    sendPWMData(pwmDutyData);
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
                 }
             }
         });
@@ -192,19 +234,10 @@ public class MMNJ_LED extends AppCompatActivity{
 
     private void initData() {
         bleDevice = getIntent().getParcelableExtra(KEY_DATA);
-        if (bleDevice == null)
+        if (bleDevice == null){
             finish();
-        
-    }
-
-    private String pwmCmdCir(int i){
-        if (i < 0xfff && i > 0xff) {
-            return "020" + Integer.toHexString(i);
-        } else if (i > 0xf) {
-            return "0200" + Integer.toHexString(i);
-        } else {
-            return "02000" + Integer.toHexString(i);
+            Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+            startActivity(intent);
         }
     }
-
 }
