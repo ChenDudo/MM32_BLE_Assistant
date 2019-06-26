@@ -1,7 +1,5 @@
 package com.mindmotion.mm32blescanner;
 
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -15,6 +13,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mindmotion.blelib.callback.BleNotifyCallback;
 import com.mindmotion.blelib.callback.BleWriteCallback;
 import com.mindmotion.blelib.data.BleDevice;
 import com.mindmotion.blelib.BleManager;
@@ -26,16 +25,32 @@ public class MMNJ_LED extends AppCompatActivity{
     public static final String KEY_DATA = "key_data";
     private static final String TAG = MMNJ_LED.class.getSimpleName();
     private boolean LEDStatus = false;
+    private boolean pwmTimStatus = false;
     private BleDevice bleDevice;
     private int pwmDutyData;
-
+    private int pwmTimeData;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mmnj__led);
-
         initData();
+
+        final String SERVICE_UUID = "00006a00-0000-1000-8000-00805f9b34fb";
+        final String NOTIFY_UUID = "00006a00-0000-1000-8000-00805f9b34fb";
+        final String WRITE_UUID = "00006a00-0000-1000-8000-00805f9b34fb";
+        final String NOTIFY_DESCRIPTOR  = "0";
+
+        //BluetoothGatt gatt = BleManager.getInstance().getBluetoothGatt(bleDevice);
+        //BluetoothGattService service = gatt.getService(UUID.fromString(SERVICE_UUID));
+        //BluetoothGattCharacteristic notifyCharacteristic = service.getCharacteristic(UUID.fromString(NOTIFY_UUID));
+        //BluetoothGattCharacteristic writeCharacteristic  = service.getCharacteristic(UUID.fromString(WRITE_UUID));
+        //service.setCharacteristicNotification(notifyCharacteristic, true);
+
+        //gatt.readCharacteristic(notifyCharacteristic);
+
+
         initView();
+        tempReadData();
 
         boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
         if(isConnected)
@@ -150,6 +165,36 @@ public class MMNJ_LED extends AppCompatActivity{
         }
     }
 
+
+    char symbol=176;
+
+    void tempReadData(){
+        final TextView tempValue = findViewById(R.id.curTep_text1);
+        BleManager.getInstance().notify(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000001-fc0a-4c04-9df8-245fc68a5036",
+                true,
+                new BleNotifyCallback() {
+
+                    @Override
+                    public void onNotifySuccess() {
+
+                    }
+
+                    @Override
+                    public void onNotifyFailure(BleException exception) {
+
+                    }
+
+                    @Override
+                    public void onCharacteristicChanged(byte[] data) {
+                        if (data[0] == 0x3) {
+                            double tempD = data[1] + data[2] * 1.0 / 100;
+                            tempValue.setText(String.valueOf(tempD)+" "+String.valueOf(symbol)+"C");
+                        }
+                    }
+                });
+
+    }
     private void initView() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -186,13 +231,22 @@ public class MMNJ_LED extends AppCompatActivity{
             }
         });
 
+        Button tempBt = findViewById(R.id.bt_temp);
+        tempBt.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                tempReadData();
+            }
+        });
+
         final SeekBar pwm = findViewById(R.id.pwmset);
         final TextView pwmValue = findViewById(R.id.textView2);
         pwm.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
 //                Log.d("Seekbar", "i: " + i);
-                pwmValue.setText("PWM DutyCycle: "+ String.valueOf(i) + "%");
+                pwmValue.setText("PWM Duty Cycle: "+ String.valueOf(i) + "%");
                 pwmDutyData = i;
             }
 
@@ -222,6 +276,75 @@ public class MMNJ_LED extends AppCompatActivity{
             }
         });
 
+
+        //TODO: pwm LED
+        Button pwmon = findViewById(R.id.bt_pwmon);
+        pwmon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+                if(isConnected){
+                    Log.i(TAG, "connect ok");
+                    sendPWMOnCmd();
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
+
+        Button pwmoff = findViewById(R.id.bt_pwmoff);
+        pwmoff.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+                if(isConnected){
+                    Log.i(TAG, "connect ok");
+                    sendPWMOffCmd();
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
+        final SeekBar pwmTim = findViewById(R.id.pwmTim);
+        pwmTim.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+//                Log.d("Seekbar", "i: " + i);
+                pwmValue.setText("Breathing Duty Length: "+ String.valueOf(i) + "x");
+                pwmTimeData = i;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        Button pwmsend = findViewById(R.id.bt_PWM);
+        pwmsend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+                if(isConnected){
+                    sendPWMTimData(pwmTimeData);
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
+
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -232,6 +355,80 @@ public class MMNJ_LED extends AppCompatActivity{
         });
     }
 
+    private void sendPWMOnCmd() {
+        BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000002-fc0a-4c04-9df8-245fc68a5036",
+                hexToByteArray("0401"),
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Toast.makeText(MMNJ_LED.this, "呼吸模式 开启！", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Toast.makeText(MMNJ_LED.this, "呼吸灯控制 发送失败！", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+        pwmTimStatus = true;
+    }
+
+    private void sendPWMOffCmd() {
+        BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000002-fc0a-4c04-9df8-245fc68a5036",
+                hexToByteArray("0402"),
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Toast.makeText(MMNJ_LED.this, "呼吸模式 关闭！", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Toast.makeText(MMNJ_LED.this, "呼吸灯控制 发送失败！", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+        pwmTimStatus = false;
+    }
+
+    private void sendPWMTimData(int i){
+        String sData = "0402";
+
+        Log.d("send data", "i: " + i);
+        if(i <= 0){
+            sendPWMOffCmd();
+        }
+        else {
+            if (pwmTimStatus == false)
+                sendPWMOnCmd();
+            if (i <= 0xf) {
+                sData = "050" + Integer.toHexString(i);
+            } else if (i <= 0xff) {
+                sData = "05" + Integer.toHexString(i);
+            }
+            Log.d("send data", "string: " + sData);
+            Log.d("send data", "byte: " + hexToByteArray(sData));
+
+            BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                    "00000002-fc0a-4c04-9df8-245fc68a5036",
+                    hexToByteArray(sData),
+                    new BleWriteCallback() {
+                        @Override
+                        public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                            Toast.makeText(MMNJ_LED.this, "时长 " + pwmTimeData + " 发送", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onWriteFailure(BleException exception) {
+                            Toast.makeText(MMNJ_LED.this, "时长 " + pwmTimeData + " 未发送", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            );
+        }
+    }
+
     private void initData() {
         bleDevice = getIntent().getParcelableExtra(KEY_DATA);
         if (bleDevice == null){
@@ -239,5 +436,6 @@ public class MMNJ_LED extends AppCompatActivity{
             Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
             startActivity(intent);
         }
+
     }
 }
