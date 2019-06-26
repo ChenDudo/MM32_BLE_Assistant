@@ -257,6 +257,14 @@ public class MMNJ_LED extends AppCompatActivity{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+                if(isConnected){
+                    sendPWMData(pwmDutyData);
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
+                }
 
             }
         });
@@ -325,6 +333,14 @@ public class MMNJ_LED extends AppCompatActivity{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                boolean isConnected = BleManager.getInstance().isConnected(bleDevice);
+                if(isConnected){
+                    sendPWMTimData(pwmTimeData);
+                }
+                else {
+                    Intent intent = new Intent(MMNJ_LED.this, MainActivity.class);
+                    startActivity(intent);
+                }
 
             }
         });
