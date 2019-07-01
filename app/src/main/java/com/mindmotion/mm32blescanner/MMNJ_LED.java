@@ -20,15 +20,21 @@ import com.mindmotion.blelib.BleManager;
 
 import com.mindmotion.blelib.exception.BleException;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
 public class MMNJ_LED extends AppCompatActivity{
 
     public static final String KEY_DATA = "key_data";
     private static final String TAG = MMNJ_LED.class.getSimpleName();
     private boolean LEDStatus = false;
     private boolean pwmTimStatus = false;
+    private boolean autoModeFlag = false;
     private BleDevice bleDevice;
     private int pwmDutyData;
     private int pwmTimeData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,14 +45,6 @@ public class MMNJ_LED extends AppCompatActivity{
         final String NOTIFY_UUID = "00006a00-0000-1000-8000-00805f9b34fb";
         final String WRITE_UUID = "00006a00-0000-1000-8000-00805f9b34fb";
         final String NOTIFY_DESCRIPTOR  = "0";
-
-        //BluetoothGatt gatt = BleManager.getInstance().getBluetoothGatt(bleDevice);
-        //BluetoothGattService service = gatt.getService(UUID.fromString(SERVICE_UUID));
-        //BluetoothGattCharacteristic notifyCharacteristic = service.getCharacteristic(UUID.fromString(NOTIFY_UUID));
-        //BluetoothGattCharacteristic writeCharacteristic  = service.getCharacteristic(UUID.fromString(WRITE_UUID));
-        //service.setCharacteristicNotification(notifyCharacteristic, true);
-
-        //gatt.readCharacteristic(notifyCharacteristic);
 
 
         initView();
@@ -369,7 +367,148 @@ public class MMNJ_LED extends AppCompatActivity{
                         .setAction("Action", null).show();
             }
         });
+
+
+        Button timecheck = findViewById(R.id.bt_time);
+        timecheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss EEEE");
+                Date curDate = new Date(System.currentTimeMillis());
+                String strTime = sd.format(curDate);
+                pwmValue.setText(strTime);
+
+                //TODO： send time format
+                sd = new SimpleDateFormat("yyyyMMddHHmmss");
+                curDate = new Date(System.currentTimeMillis());
+                strTime = sd.format(curDate);
+
+                Calendar calendar = Calendar.getInstance();//日历对象
+                int week = calendar.get(Calendar.DAY_OF_WEEK);
+
+                //strTime = strTime + Integer.toString(week);
+
+                switch(week){
+                    case 1:
+                        strTime = strTime + "01";
+                        break;
+                    case 2:
+                        strTime = strTime + "02";
+                        break;
+                    case 3:
+                        strTime = strTime + "03";
+                        break;
+                    case 4:
+                        strTime = strTime + "04";
+                        break;
+                    case 5:
+                        strTime = strTime + "05";
+                        break;
+                    case 6:
+                        strTime = strTime + "06";
+                        break;
+                    case 7:
+                        strTime = strTime + "07";
+                        break;
+                }
+                Log.d(TAG, "onClick: timeValue: " + strTime);
+
+                sendTimeData(strTime);
+//                String weekStr = "";
+//                switch (week) {
+//                    case 1:
+//                        weekStr = "周日";
+//                        break;
+//                    case 2:
+//                        weekStr = "周一";
+//                        break;
+//                    case 3:
+//                        weekStr = "周二";
+//                        break;
+//                    case 4:
+//                        weekStr = "周三";
+//                        break;
+//                    case 5:
+//                        weekStr = "周四";
+//                        break;
+//                    case 6:
+//                        weekStr = "周五";
+//                        break;
+//                    case 7:
+//                        weekStr = "周六";
+//                        break;
+//                    default:
+//                        break;
+//                }
+
+            }
+        });
+
+        //todo：切记此处是反逻辑
+        Button autoMode = findViewById(R.id.bt_timmode);
+        autoMode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(autoModeFlag) {
+                    sendAutoCmd(1); //close
+                }
+                else {
+                    sendAutoCmd(0); //open
+                }
+            }
+        });
+
     }
+
+    private void sendAutoCmd(int i) {
+        String sAutoDat;
+        if(1 == i){
+            sAutoDat = "0701";      //close
+            autoModeFlag = false;
+        }
+        else {
+            sAutoDat = "0702";      //open
+            autoModeFlag = true;
+        }
+        BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000002-fc0a-4c04-9df8-245fc68a5036",
+                hexToByteArray(sAutoDat),
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Toast.makeText(MMNJ_LED.this, autoModeFlag + " 发送", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Toast.makeText(MMNJ_LED.this, autoModeFlag + " 未发送", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void sendTimeData(final String strTime) {
+        String sTimeDat;
+        sTimeDat = "06" + strTime;
+        BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
+                "00000002-fc0a-4c04-9df8-245fc68a5036",
+                hexToByteArray(sTimeDat),
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Toast.makeText(MMNJ_LED.this, strTime + " 发送", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Toast.makeText(MMNJ_LED.this, strTime + " 未发送", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+    }
+
+
 
     private void sendPWMOnCmd() {
         BleManager.getInstance().write(bleDevice, "00000000-fc0a-4c04-9df8-245fc68a5036",
