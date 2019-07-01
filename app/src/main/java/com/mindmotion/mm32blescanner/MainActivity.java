@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_CODE_OPEN_GPS = 1;
     private static final int REQUEST_CODE_PERMISSION_LOCATION = 2;
-
+    String ledName = "MMNJ LogoWall";
     private DeviceAdapter deviceAdapter;
     private ProgressDialog progressDialog;
     private SectionsPagerAdapter sectionsPagerAdapter;
@@ -244,6 +244,11 @@ public class MainActivity extends AppCompatActivity
                 if(bleDevice.getName()==null) {
                     return;
                 }
+                //TODO select only MM32
+//                else if(bleDevice.getName().equals(ledName)) {
+//                    deviceAdapter.addDevice(bleDevice);
+//                    deviceAdapter.notifyDataSetChanged();
+//                }
                 else{
                     deviceAdapter.addDevice(bleDevice);
                     deviceAdapter.notifyDataSetChanged();
@@ -332,7 +337,7 @@ public class MainActivity extends AppCompatActivity
                 viewPager.setAdapter(sectionsPagerAdapter);
 
                 //　TODO: open LED setting
-                String ledName = "MMNJ LogoWall";
+
 
                 if (bleDevice.getName().equals(ledName)) {
 
